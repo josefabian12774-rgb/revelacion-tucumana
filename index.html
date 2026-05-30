@@ -114,81 +114,94 @@
 
                 const db = data.content;
                 
-                // Configurar Botón de WhatsApp Directo con el mensaje customizado
+                // Mapeo tolerante a variaciones de estructura JSON (Asegura compatibilidad con tu fila)
+                const info = db.info || {};
+                const styles = db.styles || {};
+                const zones = db.zones || {};
+                const configCierre = db.config_cierre || {};
+
+                // Configurar WhatsApp
                 const wspBtn = document.getElementById('nexo-wsp-btn');
-                const telefono = db.info?.whatsapp_nexo || "+5492964400784";
-                const msgCustom = encodeURIComponent(db.config_cierre?.custom_whatsapp_msg || "¡Hola! Quiero hacer un pedido.");
+                const telefono = info.whatsapp_nexo || "+5492964400784";
+                const msgCustom = encodeURIComponent(configCierre.custom_whatsapp_msg || "¡Hola! Quiero hacer un pedido a Revelación Tucumana.");
                 wspBtn.href = `https://wa.me/${telefono.replace('+', '')}?text=${msgCustom}`;
                 
-                document.body.style.backgroundColor = db.styles?.bg_color || '#121212';
-                if(db.styles?.bg_pattern) {
-                    document.body.style.backgroundImage = `url('${db.styles.bg_pattern}')`;
+                // Aplicar Estilos Visuales
+                document.body.style.backgroundColor = styles.bg_color || '#121212';
+                if(styles.bg_pattern) {
+                    document.body.style.backgroundImage = `url('${styles.bg_pattern}')`;
                 }
 
-                const pColor = db.styles?.primary_color || '#FFD700';
-                const aColor = db.styles?.accent_color || '#FFA500';
+                const pColor = styles.primary_color || '#FFD700';
+                const aColor = styles.accent_color || '#FFA500';
 
+                // Inyectar Textos de Cabecera
                 const titleEl = document.getElementById('nave-title');
-                titleEl.innerText = (db.info?.business_name || db.header?.title || "Nave Nexo");
+                titleEl.innerText = info.business_name || "REVELACIÓN TUCUMANA";
                 titleEl.style.color = pColor;
-                document.getElementById('nave-tagline').innerText = (db.info?.tagline || db.header?.tagline || "");
+                document.getElementById('nave-tagline').innerText = info.tagline || "Sabor original";
 
-                // Renderizado Módulo: PROMOS
-                if (db.zones?.promos && db.zones.promos.length > 0) {
+                // Renderizado Seguro: PROMOS
+                if (zones.promos && zones.promos.length > 0) {
                     document.getElementById('sec-promos').classList.remove('hidden');
                     const container = document.getElementById('grid-promos');
-                    db.zones.promos.forEach(item => {
+                    container.innerHTML = ""; // Limpiar
+                    zones.promos.forEach(item => {
                         container.innerHTML += `
                             <div class="relative p-5 rounded-xl border bg-zinc-950/60" style="border-color: ${aColor}15">
                                 <div class="absolute top-0 right-0 text-[9px] font-black px-2 py-0.5 rounded-bl-lg text-black" style="background-color: ${aColor}">PROMO</div>
                                 <div class="flex justify-between items-start">
                                     <div class="max-w-[75%]">
-                                        <h3 class="text-sm font-bold text-white tracking-tight">${item.nombre}</h3>
-                                        <p class="text-[11px] text-zinc-400 mt-0.5 font-light leading-relaxed">${item.descripcion}</p>
+                                        <h3 class="text-sm font-bold text-white tracking-tight">${item.nombre || item.title || ''}</h3>
+                                        <p class="text-[11px] text-zinc-400 mt-0.5 font-light leading-relaxed">${item.descripcion || item.description || ''}</p>
                                     </div>
-                                    <div class="font-mono text-sm font-black text-right" style="color: ${pColor}">$${item.precio}</div>
+                                    <div class="font-mono text-sm font-black text-right" style="color: ${pColor}">$${item.precio || item.price || 0}</div>
                                 </div>
                             </div>`;
                     });
                 }
 
-                // Renderizado Módulo: ESPECIALIDADES
-                if (db.zones?.especialidades && db.zones.especialidades.length > 0) {
+                // Renderizado Seguro: ESPECIALIDADES
+                if (zones.especialidades && zones.especialidades.length > 0) {
                     document.getElementById('sec-especialidades').classList.remove('hidden');
                     const container = document.getElementById('grid-especialidades');
-                    db.zones.especialidades.forEach(item => {
+                    container.innerHTML = "";
+                    zones.especialidades.forEach(item => {
                         container.innerHTML += `
                             <div class="p-4 rounded-xl border border-zinc-900 bg-zinc-900/20 backdrop-blur-sm flex justify-between items-center">
                                 <div class="max-w-[75%]">
-                                    <h3 class="text-xs font-bold text-zinc-200">${item.nombre}</h3>
-                                    <p class="text-[10px] text-zinc-500 mt-0.5 line-clamp-2 font-light">${item.descripcion}</p>
+                                    <h3 class="text-xs font-bold text-zinc-200">${item.nombre || item.title || ''}</h3>
+                                    <p class="text-[10px] text-zinc-500 mt-0.5 line-clamp-2 font-light">${item.descripcion || item.description || ''}</p>
                                 </div>
-                                <div class="font-mono text-xs font-bold pl-2" style="color: ${pColor}">$${item.precio}</div>
+                                <div class="font-mono text-xs font-bold pl-2" style="color: ${pColor}">$${item.precio || item.price || 0}</div>
                             </div>`;
                     });
                 }
 
-                // Renderizado Módulo: MENÚ DEL DÍA
-                if (db.zones?.menu_dia && db.zones.menu_dia.length > 0) {
+                // Renderizado Seguro: MENÚ DEL DÍA
+                if (zones.menu_dia && zones.menu_dia.length > 0) {
                     document.getElementById('sec-menudia').classList.remove('hidden');
                     const container = document.getElementById('grid-menudia');
-                    db.zones.menu_dia.forEach(item => {
+                    container.innerHTML = "";
+                    zones.menu_dia.forEach(item => {
                         container.innerHTML += `
                             <div class="flex justify-between items-center w-full">
                                 <div>
-                                    <h3 class="text-xs font-bold text-white uppercase tracking-wide">${item.nombre}</h3>
-                                    <p class="text-[11px] text-zinc-500 mt-0.5">${item.descripcion}</p>
+                                    <h3 class="text-xs font-bold text-white uppercase tracking-wide">${item.nombre || item.title || ''}</h3>
+                                    <p class="text-[11px] text-zinc-500 mt-0.5">${item.descripcion || item.description || ''}</p>
                                 </div>
-                                <div class="font-mono text-sm font-black" style="color: ${aColor}">$${item.precio}</div>
+                                <div class="font-mono text-sm font-black" style="color: ${aColor}">$${item.precio || item.price || 0}</div>
                             </div>`;
                     });
                 }
 
+                // Desactivar pantalla de carga
                 loadingEl.classList.add('hidden');
                 uiEl.classList.remove('opacity-0');
 
             } catch (err) {
-                loadingEl.innerText = "ERROR // COLISIÓN DE NÚCLEO";
+                loadingEl.innerText = "ERROR // FALLA EN PROCESAMIENTO DE NÚCLEO";
+                console.error(err);
             }
         }
 
