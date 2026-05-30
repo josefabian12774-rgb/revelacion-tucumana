@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nexo Nave — Carga</title>
+    <title>Nexo Nave — Revelación Tucumana</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
@@ -14,7 +14,7 @@
         .animate-loading { animation: loadingBar 1.5s infinite linear; }
     </style>
 </head>
-<body class="bg-[#121212] text-white antialiased font-sans pb-24">
+<body class="bg-[#121212] text-white antialiased font-sans pb-28">
 
     <div id="reactor-loading" class="fixed inset-0 bg-[#121212] flex flex-col justify-center items-center z-50">
         <div class="text-orange-500 font-mono text-xs tracking-[0.3em] uppercase animate-pulse">Sincronizando sistemas...</div>
@@ -66,10 +66,17 @@
                 <div id="grid-menudia" class="p-4 rounded-xl border border-zinc-800 bg-zinc-950/40"></div>
             </section>
         </main>
+
+        <div class="fixed bottom-6 right-6 z-40">
+            <a id="nexo-wsp-btn" href="#" target="_blank" class="flex items-center justify-center p-4 rounded-full bg-[#25D366] text-white shadow-2xl transition-transform duration-300 hover:scale-110 active:scale-95">
+                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 11.966.01c3.184.001 6.177 1.242 8.425 3.492 2.247 2.248 3.481 5.241 3.48 8.427-.004 6.618-5.34 11.955-11.912 11.955-2.004-.002-3.973-.505-5.717-1.46L0 24zm6.59-4.846c1.6.95 3.188 1.449 4.625 1.451 5.436 0 9.86-4.37 9.864-9.799.002-2.63-1.023-5.101-2.885-6.965C16.388 1.975 13.932 1.95 11.972 1.95c-5.444 0-9.873 4.374-9.877 9.804-.001 1.768.479 3.423 1.39 4.924l-.993 3.629 3.71-.973zm11.514-6.341c-.322-.161-1.905-.94-2.199-1.047-.294-.107-.508-.161-.723.161-.214.321-.83 1.047-1.016 1.262-.187.214-.373.241-.696.08-1.51-.753-2.428-1.33-3.411-3.023-.259-.444.259-.412.74-.1.432.28.094.062.242.188.147.125.241.206.348.42.107.214.054.402-.027.562-.08.161-.723 1.742-.99 2.385-.26.625-.526.54-.723.55l-.615.01c-.214 0-.562-.08-.856-.402-.294-.321-1.123-1.099-1.123-2.682 0-1.583 1.149-3.111 1.309-3.326.16-.214 2.261-3.453 5.478-4.843.766-.331 1.364-.529 1.83-.678.77-.244 1.472-.21 2.028-.128.619.092 1.905.777 2.172 1.527.267.75.267 1.393.187 1.527-.08.134-.294.214-.615.375z"/>
+                </svg>
+            </a>
+        </div>
     </div>
 
     <script>
-        // SOLDEO DE LLAVES AUTOGENERADO POR INFRAESTRUCTURA MÓVIL
         const SUPABASE_KEY = "sb_publishable_LTZY6uMVRCnd_K41dneBtw_xn3XU0ke";
         const SUPABASE_URL = "https://manaejtcurxbcsozqcsh.supabase.co"; 
         
@@ -107,6 +114,12 @@
 
                 const db = data.content;
                 
+                // Configurar Botón de WhatsApp Directo con el mensaje customizado
+                const wspBtn = document.getElementById('nexo-wsp-btn');
+                const telefono = db.info?.whatsapp_nexo || "+5492964400784";
+                const msgCustom = encodeURIComponent(db.config_cierre?.custom_whatsapp_msg || "¡Hola! Quiero hacer un pedido.");
+                wspBtn.href = `https://wa.me/${telefono.replace('+', '')}?text=${msgCustom}`;
+                
                 document.body.style.backgroundColor = db.styles?.bg_color || '#121212';
                 if(db.styles?.bg_pattern) {
                     document.body.style.backgroundImage = `url('${db.styles.bg_pattern}')`;
@@ -126,7 +139,7 @@
                     const container = document.getElementById('grid-promos');
                     db.zones.promos.forEach(item => {
                         container.innerHTML += `
-                            <div class="relative p-5 rounded-xl border bg-zinc-950/60 transition-all duration-300" style="border-color: ${aColor}15">
+                            <div class="relative p-5 rounded-xl border bg-zinc-950/60" style="border-color: ${aColor}15">
                                 <div class="absolute top-0 right-0 text-[9px] font-black px-2 py-0.5 rounded-bl-lg text-black" style="background-color: ${aColor}">PROMO</div>
                                 <div class="flex justify-between items-start">
                                     <div class="max-w-[75%]">
