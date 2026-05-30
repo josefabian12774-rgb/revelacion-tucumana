@@ -69,12 +69,11 @@
     </div>
 
     <script>
-        // 1. CONFIGURACIÓN DEL CLIENTE SUPABASE (Apunta a tu base existente)
-        const SUPABASE_URL = "https://tu-supabase-url.supabase.co"; // Reemplazar con tu URL de Supabase
-        const SUPABASE_KEY = "tu-supabase-anon-key"; // Reemplazar con tu anon key de Supabase
+        // SOLDEO DE LLAVES AUTOGENERADO POR INFRAESTRUCTURA MÓVIL
+        const SUPABASE_KEY = "sb_publishable_LTZY6uMVRCnd_K41dneBtw_xn3XU0ke";
+        const SUPABASE_URL = "https://manaejtcurxbcsozqcsh.supabase.co"; 
+        
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-        // Identificador forzado para esta nave independiente
         const PERFIL_SLUG = "revelacion-tucumana";
 
         async function encenderReactor() {
@@ -84,7 +83,6 @@
             const uiEl = document.getElementById('reactor-ui');
 
             try {
-                // Consulta directa filtrando por la fila que creamos recién
                 const { data, error } = await _supabase
                     .from('naves')
                     .select('status, content')
@@ -96,7 +94,6 @@
                     return;
                 }
 
-                // Evaluar estados de control de flota
                 if (data.status === 'anchored') {
                     loadingEl.classList.add('hidden');
                     anchoredEl.classList.remove('hidden');
@@ -108,10 +105,8 @@
                     return;
                 }
 
-                // Inyección Camaleónica de Contenido
                 const db = data.content;
                 
-                // Aplicar estilos de la Identidad Visual
                 document.body.style.backgroundColor = db.styles?.bg_color || '#121212';
                 if(db.styles?.bg_pattern) {
                     document.body.style.backgroundImage = `url('${db.styles.bg_pattern}')`;
@@ -120,11 +115,10 @@
                 const pColor = db.styles?.primary_color || '#FFD700';
                 const aColor = db.styles?.accent_color || '#FFA500';
 
-                // Títulos del Header
                 const titleEl = document.getElementById('nave-title');
-                titleEl.innerText = db.header?.title || "Nave Nexo";
+                titleEl.innerText = (db.info?.business_name || db.header?.title || "Nave Nexo");
                 titleEl.style.color = pColor;
-                document.getElementById('nave-tagline').innerText = db.header?.tagline || "";
+                document.getElementById('nave-tagline').innerText = (db.info?.tagline || db.header?.tagline || "");
 
                 // Renderizado Módulo: PROMOS
                 if (db.zones?.promos && db.zones.promos.length > 0) {
@@ -177,7 +171,6 @@
                     });
                 }
 
-                // Encendido de Interfaz con transición cosmética
                 loadingEl.classList.add('hidden');
                 uiEl.classList.remove('opacity-0');
 
@@ -190,4 +183,3 @@
     </script>
 </body>
 </html>
-
