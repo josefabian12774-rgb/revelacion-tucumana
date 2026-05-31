@@ -3,209 +3,132 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nexo Nave — Revelación Tucumana</title>
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <title>Revelación Tucumana</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/standalone/tailwindcss@3.4.1"></script>
     <style>
-        @keyframes loadingBar {
-            0% { transform: translateX(-100%); }
-            100% { transform: translateX(100%); }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #09090b;
         }
-        .animate-loading { animation: loadingBar 1.5s infinite linear; }
     </style>
 </head>
-<body class="bg-[#121212] text-white antialiased font-sans pb-28">
+<body class="text-zinc-100 min-h-screen flex flex-col items-center p-4 sm:p-8">
 
-    <div id="reactor-loading" class="fixed inset-0 bg-[#121212] flex flex-col justify-center items-center z-50">
-        <div class="text-orange-500 font-mono text-xs tracking-[0.3em] uppercase animate-pulse">Sincronizando sistemas...</div>
-        <div class="w-48 h-[2px] bg-zinc-800 mt-4 rounded overflow-hidden relative">
-            <div class="absolute inset-0 bg-gradient-to-r from-orange-500 to-amber-400 animate-loading"></div>
+    <div class="w-full max-w-md bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6 shadow-xl backdrop-blur-sm space-y-6">
+        
+        <div class="flex items-center justify-between border-b border-zinc-800 pb-4">
+            <div>
+                <h1 class="text-xl font-bold tracking-tight text-amber-500">REVELACIÓN TUCUMANA</h1>
+                <p class="text-xs text-zinc-400 mt-0.5">Terminal de Datos Nexo-Nave</p>
+            </div>
+            <div class="flex items-center gap-1.5 bg-zinc-950 px-2.5 py-1 rounded-full border border-zinc-800">
+                <span id="status-indicator" class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+                <span id="status-text" class="text-[10px] font-mono tracking-wider text-zinc-400 uppercase">Sincronizando</span>
+            </div>
         </div>
-    </div>
 
-    <div id="reactor-anchored" class="fixed inset-0 bg-black hidden flex-col justify-center items-center z-50 px-4 text-center">
-        <div class="max-w-md p-8 rounded-2xl bg-zinc-900 border border-red-900/40 shadow-2xl">
-            <h1 class="text-lg font-black text-red-500 uppercase tracking-widest mb-3">🛸 Hangar Nexo</h1>
-            <p class="text-zinc-400 text-xs font-normal leading-relaxed">
-                Nave en proceso de reabastecimiento. Contactar con <span class="text-white font-bold">Nexo Arquetipo</span> para reactivar el vuelo.
-            </p>
+        <div id="loading-view" class="py-12 flex flex-col items-center justify-center space-y-3">
+            <div class="w-6 h-6 border-2 border-amber-500/20 border-t-amber-500 rounded-full animate-spin"></div>
+            <p class="text-xs text-zinc-500 font-mono">Leyendo telemetría del servidor remoto...</p>
         </div>
-    </div>
 
-    <div id="reactor-waiting" class="fixed inset-0 bg-[#161412] hidden flex-col justify-center items-center z-50 px-4 text-center">
-        <div class="max-w-sm p-6 rounded-xl border border-amber-600/10 bg-zinc-950/90 backdrop-blur-md shadow-2xl">
-            <p class="text-amber-400 font-serif text-base tracking-wide italic">Esperando abastecimiento...</p>
+        <div id="error-view" class="hidden bg-red-950/20 border border-red-900/30 rounded-xl p-4 space-y-2">
+            <div class="flex items-center gap-2 text-red-400 text-xs font-bold uppercase font-mono">
+                <span>⚠️ Error // Falla de Telemetría</span>
+            </div>
+            <p class="text-xs text-zinc-400 leading-relaxed">No se pudo decodificar el canal de datos remoto. Verificá las políticas internas de lectura en tu tabla.</p>
+            <pre id="error-debug" class="text-[10px] font-mono bg-black/40 p-2 rounded text-red-300 overflow-x-auto max-h-32 mt-2 hidden"></pre>
         </div>
-    </div>
 
-    <div id="reactor-ui" class="opacity-0 transition-opacity duration-500">
-        <header class="p-6 text-center border-b border-white/5 bg-black/20">
-            <h1 id="nave-title" class="text-2xl font-black uppercase tracking-tight"></h1>
-            <p id="nave-tagline" class="text-xs text-zinc-400 mt-1 italic font-light"></p>
-        </header>
+        <div id="content-view" class="hidden space-y-4">
+            <div class="bg-zinc-950 p-4 rounded-xl border border-zinc-800/80 space-y-3">
+                <div class="flex justify-between items-center">
+                    <span class="text-xs font-mono text-zinc-500">Estado de Nave:</span>
+                    <span id="nave-status" class="text-xs font-mono px-2 py-0.5 rounded bg-zinc-800 text-zinc-300">Desconocido</span>
+                </div>
+                <div class="border-t border-zinc-900 my-1"></div>
+                <div class="space-y-1">
+                    <span class="text-xs font-mono text-zinc-500 block">Información de la Tabla:</span>
+                    <div id="nave-content" class="text-sm text-zinc-300 bg-zinc-900/30 p-3 rounded-lg border border-zinc-800/50 min-h-[60px] whitespace-pre-wrap"></div>
+                </div>
+            </div>
+        </div>
 
-        <main class="max-w-md mx-auto p-4 mt-6 space-y-10">
-            <section id="sec-promos" class="hidden">
-                <h2 class="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 mb-4 flex items-center gap-1.5">
-                    <span class="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse"></span> 🔥 Promociones del Día
-                </h2>
-                <div id="grid-promos" class="space-y-3"></div>
-            </section>
-
-            <section id="sec-especialidades" class="hidden">
-                <h2 class="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 mb-4 flex items-center gap-1.5">
-                    <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span> ⭐ Especialidades de la Casa
-                </h2>
-                <div id="grid-especialidades" class="grid grid-cols-1 gap-3"></div>
-            </section>
-
-            <section id="sec-menudia" class="hidden">
-                <h2 class="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 mb-4 flex items-center gap-1.5">
-                    <span class="w-1.5 h-1.5 rounded-full bg-zinc-600"></span> 📋 Sugerencia del Chef
-                </h2>
-                <div id="grid-menudia" class="p-4 rounded-xl border border-zinc-800 bg-zinc-950/40"></div>
-            </section>
-        </main>
-
-        <div class="fixed bottom-6 right-6 z-40">
-            <a id="nexo-wsp-btn" href="#" target="_blank" class="flex items-center justify-center p-4 rounded-full bg-[#25D366] text-white shadow-2xl transition-transform duration-300 hover:scale-110 active:scale-95">
-                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 11.966.01c3.184.001 6.177 1.242 8.425 3.492 2.247 2.248 3.481 5.241 3.48 8.427-.004 6.618-5.34 11.955-11.912 11.955-2.004-.002-3.973-.505-5.717-1.46L0 24zm6.59-4.846c1.6.95 3.188 1.449 4.625 1.451 5.436 0 9.86-4.37 9.864-9.799.002-2.63-1.023-5.101-2.885-6.965C16.388 1.975 13.932 1.95 11.972 1.95c-5.444 0-9.873 4.374-9.877 9.804-.001 1.768.479 3.423 1.39 4.924l-.993 3.629 3.71-.973zm11.514-6.341c-.322-.161-1.905-.94-2.199-1.047-.294-.107-.508-.161-.723.161-.214.321-.83 1.047-1.016 1.262-.187.214-.373.241-.696.08-1.51-.753-2.428-1.33-3.411-3.023-.259-.444.259-.412.74-.1.432.28.094.062.242.188.147.125.241.206.348.42.107.214.054.402-.027.562-.08.161-.723 1.742-.99 2.385-.26.625-.526.54-.723.55l-.615.01c-.214 0-.562-.08-.856-.402-.294-.321-1.123-1.099-1.123-2.682 0-1.583 1.149-3.111 1.309-3.326.16-.214 2.261-3.453 5.478-4.843.766-.331 1.364-.529 1.83-.678.77-.244 1.472-.21 2.028-.128.619.092 1.905.777 2.172 1.527.267.75.267 1.393.187 1.527-.08.134-.294.214-.615.375z"/>
-                </svg>
-            </a>
+        <div class="text-[10px] font-mono text-center text-zinc-600 border-t border-zinc-800/60 pt-4">
+            josefabian12774-rgb // 2026
         </div>
     </div>
 
     <script>
+        // Enlace depurado sin extensiones ni barras finales
+        const SUPABASE_URL = "https://manaejtcurxbcsozqcsh.supabase.co";
         const SUPABASE_KEY = "sb_publishable_LTZY6uMVRCnd_K41dneBtw_xn3XU0ke";
-        const SUPABASE_URL = "https://manaejtcurxbcsozqcsh.supabase.co"; 
-        
-        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-        const PERFIL_SLUG = "revelacion-tucumana";
 
-        async function encenderReactor() {
-            const loadingEl = document.getElementById('reactor-loading');
-            const anchoredEl = document.getElementById('reactor-anchored');
-            const waitingEl = document.getElementById('reactor-waiting');
-            const uiEl = document.getElementById('reactor-ui');
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        async function conectarCanal() {
+            const loadingView = document.getElementById('loading-view');
+            const errorView = document.getElementById('error-view');
+            const contentView = document.getElementById('content-view');
+            const errorDebug = document.getElementById('error-debug');
+            
+            const statusIndicator = document.getElementById('status-indicator');
+            const statusText = document.getElementById('status-text');
+            
+            const naveStatus = document.getElementById('nave-status');
+            const naveContent = document.getElementById('nave-content');
 
             try {
+                // Selección del registro exacto por medio de tu slug único
                 const { data, error } = await _supabase
                     .from('naves')
                     .select('status, content')
-                    .eq('perfil_slug', PERFIL_SLUG)
+                    .eq('perfil_slug', 'revelacion-tucumana')
                     .single();
 
-                if (error || !data) {
-                    loadingEl.innerText = "ERROR // FALLA DE TELEMETRÍA";
+                loadingView.classList.add('hidden');
+
+                if (error) {
+                    statusIndicator.className = "w-2 h-2 rounded-full bg-red-500";
+                    statusText.innerText = "Desconectado";
+                    errorView.classList.remove('hidden');
+                    errorDebug.innerText = JSON.stringify(error, null, 2);
+                    errorDebug.classList.remove('hidden');
                     return;
                 }
 
-                if (data.status === 'anchored') {
-                    loadingEl.classList.add('hidden');
-                    anchoredEl.classList.remove('hidden');
-                    return;
+                if (data) {
+                    statusIndicator.className = "w-2 h-2 rounded-full bg-emerald-500 animate-pulse";
+                    statusText.innerText = "Online";
+                    statusText.className = "text-[10px] font-mono tracking-wider text-emerald-400 uppercase";
+                    
+                    naveStatus.innerText = data.status || 'SIN REGISTRO';
+                    if (data.status === 'activo' || data.status === 'ONLINE') {
+                        naveStatus.className = "text-xs font-mono px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-900/50";
+                    }
+                    
+                    if (typeof data.content === 'object') {
+                        naveContent.innerText = JSON.stringify(data.content, null, 2);
+                    } else {
+                        naveContent.innerText = data.content || 'Estructura vacía en la base de datos.';
+                    }
+                    
+                    contentView.classList.remove('hidden');
                 }
-                if (data.status === 'waiting_pay') {
-                    loadingEl.classList.add('hidden');
-                    waitingEl.classList.remove('hidden');
-                    return;
-                }
-
-                const db = data.content;
-                
-                // Mapeo tolerante a variaciones de estructura JSON (Asegura compatibilidad con tu fila)
-                const info = db.info || {};
-                const styles = db.styles || {};
-                const zones = db.zones || {};
-                const configCierre = db.config_cierre || {};
-
-                // Configurar WhatsApp
-                const wspBtn = document.getElementById('nexo-wsp-btn');
-                const telefono = info.whatsapp_nexo || "+5492964400784";
-                const msgCustom = encodeURIComponent(configCierre.custom_whatsapp_msg || "¡Hola! Quiero hacer un pedido a Revelación Tucumana.");
-                wspBtn.href = `https://wa.me/${telefono.replace('+', '')}?text=${msgCustom}`;
-                
-                // Aplicar Estilos Visuales
-                document.body.style.backgroundColor = styles.bg_color || '#121212';
-                if(styles.bg_pattern) {
-                    document.body.style.backgroundImage = `url('${styles.bg_pattern}')`;
-                }
-
-                const pColor = styles.primary_color || '#FFD700';
-                const aColor = styles.accent_color || '#FFA500';
-
-                // Inyectar Textos de Cabecera
-                const titleEl = document.getElementById('nave-title');
-                titleEl.innerText = info.business_name || "REVELACIÓN TUCUMANA";
-                titleEl.style.color = pColor;
-                document.getElementById('nave-tagline').innerText = info.tagline || "Sabor original";
-
-                // Renderizado Seguro: PROMOS
-                if (zones.promos && zones.promos.length > 0) {
-                    document.getElementById('sec-promos').classList.remove('hidden');
-                    const container = document.getElementById('grid-promos');
-                    container.innerHTML = ""; // Limpiar
-                    zones.promos.forEach(item => {
-                        container.innerHTML += `
-                            <div class="relative p-5 rounded-xl border bg-zinc-950/60" style="border-color: ${aColor}15">
-                                <div class="absolute top-0 right-0 text-[9px] font-black px-2 py-0.5 rounded-bl-lg text-black" style="background-color: ${aColor}">PROMO</div>
-                                <div class="flex justify-between items-start">
-                                    <div class="max-w-[75%]">
-                                        <h3 class="text-sm font-bold text-white tracking-tight">${item.nombre || item.title || ''}</h3>
-                                        <p class="text-[11px] text-zinc-400 mt-0.5 font-light leading-relaxed">${item.descripcion || item.description || ''}</p>
-                                    </div>
-                                    <div class="font-mono text-sm font-black text-right" style="color: ${pColor}">$${item.precio || item.price || 0}</div>
-                                </div>
-                            </div>`;
-                    });
-                }
-
-                // Renderizado Seguro: ESPECIALIDADES
-                if (zones.especialidades && zones.especialidades.length > 0) {
-                    document.getElementById('sec-especialidades').classList.remove('hidden');
-                    const container = document.getElementById('grid-especialidades');
-                    container.innerHTML = "";
-                    zones.especialidades.forEach(item => {
-                        container.innerHTML += `
-                            <div class="p-4 rounded-xl border border-zinc-900 bg-zinc-900/20 backdrop-blur-sm flex justify-between items-center">
-                                <div class="max-w-[75%]">
-                                    <h3 class="text-xs font-bold text-zinc-200">${item.nombre || item.title || ''}</h3>
-                                    <p class="text-[10px] text-zinc-500 mt-0.5 line-clamp-2 font-light">${item.descripcion || item.description || ''}</p>
-                                </div>
-                                <div class="font-mono text-xs font-bold pl-2" style="color: ${pColor}">$${item.precio || item.price || 0}</div>
-                            </div>`;
-                    });
-                }
-
-                // Renderizado Seguro: MENÚ DEL DÍA
-                if (zones.menu_dia && zones.menu_dia.length > 0) {
-                    document.getElementById('sec-menudia').classList.remove('hidden');
-                    const container = document.getElementById('grid-menudia');
-                    container.innerHTML = "";
-                    zones.menu_dia.forEach(item => {
-                        container.innerHTML += `
-                            <div class="flex justify-between items-center w-full">
-                                <div>
-                                    <h3 class="text-xs font-bold text-white uppercase tracking-wide">${item.nombre || item.title || ''}</h3>
-                                    <p class="text-[11px] text-zinc-500 mt-0.5">${item.descripcion || item.description || ''}</p>
-                                </div>
-                                <div class="font-mono text-sm font-black" style="color: ${aColor}">$${item.precio || item.price || 0}</div>
-                            </div>`;
-                    });
-                }
-
-                // Desactivar pantalla de carga
-                loadingEl.classList.add('hidden');
-                uiEl.classList.remove('opacity-0');
 
             } catch (err) {
-                loadingEl.innerText = "ERROR // FALLA EN PROCESAMIENTO DE NÚCLEO";
-                console.error(err);
+                loadingView.classList.add('hidden');
+                statusIndicator.className = "w-2 h-2 rounded-full bg-red-500";
+                statusText.innerText = "Falla Crítica";
+                errorView.classList.remove('hidden');
+                errorDebug.innerText = err.message;
+                errorDebug.classList.remove('hidden');
             }
         }
 
-        window.onload = encenderReactor;
+        window.onload = conectarCanal;
     </script>
 </body>
 </html>
